@@ -8,3 +8,6 @@ alias zshreload='source ~/.zshrc'
 # ─── Recon shortcuts ──────────────────────────────────────────────────────────
 alias passive='ls passive/ 2>/dev/null || echo "[!] No passive/ dir here"'
 alias live='ls live/ 2>/dev/null || echo "[!] No live/ dir here"'
+
+# ─── Bug bounty ──────────────────────────────────────────────────────────
+alias bb='cd ~/BugBounty/'

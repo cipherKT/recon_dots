@@ -8,7 +8,7 @@ subs() {
         return 1
     fi
 
-    local tools=(subfinder assetfinder amass jq anew github-subdomains curl)
+    local tools=(subfinder assetfinder jq anew github-subdomains curl)
     for tool in "${tools[@]}"; do
         if ! command -v "$tool" &>/dev/null; then
             echo "[!] Missing dependency: $tool"
@@ -32,9 +32,6 @@ subs() {
     assetfinder --subs-only "$domain" \
         | anew "$base/assetfinder.txt"
 
-    echo "[+] Running amass passive"
-    amass enum -passive -d "$domain" \
-        -o "$base/amass.txt"
 
     echo "[+] Running crt.sh"
     curl -s "https://crt.sh/?q=%25.$domain&output=json" \
