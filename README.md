@@ -1,219 +1,216 @@
+# recon_dots
 
-# Recon Dotfiles
-
-Personal recon and bug bounty environment setup for WSL/Linux.
-
-Modular zsh configuration with:
-- reusable recon wrappers
-- portable environment variables
-- organized recon output structure
-- bootstrap-based setup
+Personal recon and bug bounty environment for Arch Linux / Omarchy.
+Modular zsh configuration with reusable recon wrappers, portable environment variables, and a one-shot bootstrap.
 
 ---
 
-# Structure
+## Structure
 
 ```text
-dotfiles/
-├── bootstrap.sh
-├── zsh/
-│   ├── aliases.zsh
-│   ├── exports.zsh
-│   ├── functions.zsh
-│   ├── paths.zsh
-│   ├── recon.zsh
-│   └── secrets.example.zsh
+.
+├── README.md
 ├── scripts/
-├── git/
-└── README.md
-````
+│   ├── bootstrap.sh
+│   └── zshrc
+└── zsh/
+    ├── aliases.zsh
+    ├── exports.zsh
+    ├── functions.zsh
+    ├── paths.zsh
+    ├── recon.zsh
+    └── secrets.example.zsh
+```
 
 ---
 
-# Features
+## Bootstrap
 
-## ZSH Modular Setup
+```bash
+chmod +x scripts/bootstrap.sh
+./scripts/bootstrap.sh
+```
 
-Configuration is split into separate files instead of maintaining a bloated `.zshrc`.
-
-### Included Modules
-
-| File          | Purpose                       |
-| ------------- | ----------------------------- |
-| aliases.zsh   | Small shell aliases           |
-| exports.zsh   | Environment variables         |
-| functions.zsh | Generic helper functions      |
-| paths.zsh     | PATH configuration            |
-| recon.zsh     | Recon and bug bounty wrappers |
+This will:
+- Symlink all `zsh/*.zsh` files to `~/.config/zsh/`
+- Copy `scripts/zshrc` to `~/.zshrc`
+- Install `zsh-autosuggestions` and `zsh-syntax-highlighting` oh-my-zsh plugins
+- Create `~/.config/zsh/secrets.zsh` from the example if it doesn't exist
+- Clone SecLists, jeanphorn, and orwa wordlists into `~/BugBounty/wordlists/`
 
 ---
 
-# Recon Wrappers
+## ZSH Modules
 
-## Passive Enumeration
+| File | Purpose |
+| --- | --- |
+| `aliases.zsh` | Shell aliases and oh-my-zsh conflict unaliases |
+| `exports.zsh` | Environment variables and wordlist paths |
+| `functions.zsh` | Generic helper functions |
+| `paths.zsh` | PATH configuration |
+| `recon.zsh` | Recon and bug bounty wrappers |
+| `secrets.zsh` | API tokens — not tracked, lives only in `~/.config/zsh/` |
 
-### `subs`
+---
 
-Runs:
+## Wordlists
 
-* subfinder
-* assetfinder
-* amass (passive)
-* crt.sh scraping
-* github-subdomains
+Wordlists live at `~/BugBounty/wordlists/`. Configured in `exports.zsh`:
 
-Example:
+```bash
+$WL_COMMON    # common.txt
+$WL_DIRB      # directory-list-2.3-medium.txt
+$WL_RAFT      # raft-medium-directories.txt
+$WL_PARAMS    # burp-parameter-names.txt
+```
+
+---
+
+## Recon Wrappers
+
+All wrappers output to the **current directory**. The expected workflow is:
+
+```text
+~/BugBounty/targets/target.com/
+└── recon/              ← cd here and run everything
+    ├── passive/
+    ├── live/
+    └── urls/
+```
+
+---
+
+### `subs` — Subdomain Enumeration
+
+Runs subfinder, assetfinder, crt.sh, and github-subdomains.
 
 ```bash
 subs target.com
 ```
 
-Output structure:
-
+Output:
 ```text
-target.com/
-└── recon/
-    └── passive/
+./passive/subfinder.txt
+./passive/assetfinder.txt
+./passive/crtsh.txt
+./passive/github.txt
+./passive/all_subs.txt     ← deduplicated
 ```
+
+Dependencies: `subfinder`, `assetfinder`, `jq`, `anew`, `github-subdomains`, `curl`
+Requires: `$GITHUB_TOKEN` in secrets.zsh
 
 ---
 
-## HTTP Probing
+### `hx` — HTTP Probing
 
-### `hx`
-
-Runs `httpx` with:
-
-* status code
-* title
-* tech detection
-* content length
-* CDN detection
-* cname resolution
-* redirects
-* IP resolution
-
-Example:
+Runs httpx with full fingerprinting — status code, title, tech detection, content length, CDN, CNAME, IP, redirects.
+Also outputs a clean URL-only file for piping into other tools.
 
 ```bash
-hx target.com/recon/passive/all_subs.txt
+hx passive/all_subs.txt
 ```
 
 Output:
-
 ```text
-target.com/recon/live/httpx.txt
+./live/httpx.txt           ← full httpx output
+./live/httpx_simple.txt    ← URLs only (col 1)
 ```
+
+Dependencies: `httpx`, `anew`
 
 ---
 
-## Katana Wrapper
+### `kat` — Katana Crawl
 
-### `kat`
-
-Example:
+Accepts a file or a single URL.
 
 ```bash
-kat target.com/recon/live/httpx.txt
+kat live/httpx_simple.txt
+kat https://sub.target.com
 ```
+
+Output:
+```text
+./katana.txt
+```
+
+Dependencies: `katana`
 
 ---
 
-## FFUF Shortcut
+### `url_harvest` — Full URL Collection
 
-### `ffm`
+Runs katana, gau, waymore, and waybackurls per host. Creates a subdirectory per hostname and deduplicates all results into `all_urls.txt`.
 
-Uses predefined medium wordlist.
+```bash
+url_harvest live/httpx_simple.txt   # file with one host per line
+url_harvest https://sub.target.com  # single host
+```
 
-Example:
+Output per host:
+```text
+./<hostname>/katana.txt
+./<hostname>/gau.txt
+./<hostname>/waymore.txt
+./<hostname>/waybackurls.txt
+./<hostname>/all_urls.txt           ← deduplicated
+```
+
+Dependencies: `katana`, `gau`, `waymore`, `waybackurls`, `anew`
+
+---
+
+### `ffm` — FFUF Directory Bruteforce
 
 ```bash
 ffm https://target.com
 ```
 
----
+Uses `$WL_DIRB`. Filters all status codes except 404.
 
-# Wordlists
-
-Environment variables are used instead of hardcoded paths.
-
-Examples:
-
-```bash
-$WL_COMMON
-$WL_DIRB
-$WL_RAFT
-```
-
-Configured in:
-
-```text
-zsh/exports.zsh
-```
+Dependencies: `ffuf`
 
 ---
 
-# Bootstrap Setup
+## Secrets
 
-Run:
-
-```bash
-chmod +x bootstrap.sh
-./bootstrap.sh
-```
-
-This:
-
-* creates zsh config structure
-* creates symlinks
-* clones wordlists
-* prepares environment
-
----
-
-# Secrets
-
-Secrets are intentionally NOT tracked.
-
-Create:
+Never tracked. Create manually or let bootstrap generate it from the example:
 
 ```text
 ~/.config/zsh/secrets.zsh
 ```
 
-Example:
-
 ```bash
-export GITHUB_TOKEN="token"
-export SHODAN_SECRET="key"
+export GITHUB_TOKEN=""
+export SHODAN_SECRET=""
+export PDTM_API=""
 ```
 
 ---
 
-# Dependencies
+## Dependencies
 
-Core tools currently used:
+| Tool | Used in |
+| --- | --- |
+| `subfinder` | subs |
+| `assetfinder` | subs |
+| `httpx` | hx |
+| `katana` | kat, url_harvest |
+| `gau` | url_harvest |
+| `waymore` | url_harvest |
+| `waybackurls` | url_harvest |
+| `ffuf` | ffm |
+| `anew` | subs, hx, url_harvest |
+| `jq` | subs |
+| `github-subdomains` | subs |
 
-* subfinder
-* assetfinder
-* amass
-* httpx
-* katana
-* ffuf
-* anew
-* jq
-* github-subdomains
+Install most via [pdtm](https://github.com/projectdiscovery/pdtm).
 
 ---
 
-# Philosophy
+## Philosophy
 
-The goal is:
-
-* lightweight automation
-* reproducible environment setup
-* cleaner recon workflows
-* less repetitive typing
-
-This setup intentionally avoids over-automated “one-click recon” pipelines.
-Manual analysis remains central to the workflow.
+- Lightweight automation, not one-click pipelines
+- Output always goes to `$PWD` — you control the directory structure
+- Manual analysis stays central to the workflow
