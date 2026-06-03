@@ -9,5 +9,8 @@ alias zshreload='source ~/.zshrc'
 alias passive='ls passive/ 2>/dev/null || echo "[!] No passive/ dir here"'
 alias live='ls live/ 2>/dev/null || echo "[!] No live/ dir here"'
 
-# ─── Bug bounty ──────────────────────────────────────────────────────────
+# ─── Quick navs──────────────────────────────────────────────────────────
 alias bb='cd ~/BugBounty/'
+alias dots='cd ~/BugBounty/automations/recon_dots/'
+alias edit_dots='cd ~/BugBounty/automations/recon_dots/ && nvim .'
+
