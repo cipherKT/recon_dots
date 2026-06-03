@@ -222,3 +222,66 @@ ffm() {
         -mc all \
         -fc 404
 }
+
+# ─── js_harvest ─────────────────────────────────────────────────────────────────
+# Usage: js_harvest <urls.txt>
+# Output: ./js_files.txt
+# Extracts all .js file URLs from a list of URLs
+js_harvest() {
+    local input="$1"
+
+    if [[ -z "$input" ]]; then
+        echo "[!] Usage: js_harvest <urls.txt>"
+        return 1
+    fi
+    if [[ ! -f "$input" ]]; then
+        echo "[!] File not found: $input"
+        return 1
+    fi
+
+    local output="$(pwd)/js_files.txt"
+
+    echo "[*] Extracting JS files from $input"
+    grep -Eo 'https?://[^"'"'"' ]+\.js([?#][^"'"'"' ]*)?' "$input" \
+        | sort -u \
+        | anew "$output"
+
+    echo "[+] Output: $output"
+    echo "[+] JS files found: $(wc -l < "$output")"
+}
+
+# ─── js_harvest_all ─────────────────────────────────────────────────────────────
+# Usage: js_harvest_all
+# Reads all_urls.txt from every subdomain dir under ./urls/<hostname>/
+# Output: ./urls/<hostname>/js_files.txt (per host) + ./js_files_all.txt (combined)
+js_harvest_all() {
+    local urls_dir="$(pwd)/urls"
+    if [[ ! -d "$urls_dir" ]]; then
+        echo "[!] No ./urls/ directory found"
+        return 1
+    fi
+
+    local all_combined="$(pwd)/js_files_all.txt"
+    > "$all_combined"
+
+    for hostdir in "$urls_dir"/*/; do
+        local hostname="$(basename "$hostdir")"
+        local input="$hostdir/all_urls.txt"
+
+        if [[ ! -f "$input" ]]; then
+            echo "  [-] Skipping $hostname (no all_urls.txt)"
+            continue
+        fi
+
+        echo "  [*] $hostname"
+        js_harvest "$input" > /dev/null
+        cp "$(pwd)/js_files.txt" "$hostdir/js_files.txt"
+        cat "$hostdir/js_files.txt" >> "$all_combined"
+    done
+    rm -f "$(pwd)/js_files.txt"
+
+    sort -u -o "$all_combined" "$all_combined"
+
+    echo "[+] Done — per-host JS files in ./urls/<hostname>/js_files.txt"
+    echo "[+] Combined: $all_combined ($(wc -l < "$all_combined") unique)"
+}
