@@ -202,6 +202,71 @@ url_harvest() {
     done
 }
 
+# ─── url_harvest_wo_katana ─────────────────────────────────────────────────────
+# Usage: url_harvest_wo_katana <file.txt|url>
+# Same as url_harvest but skips katana — for data-heavy targets where
+# crawling would waste time on millions of static assets.
+# Output: ./urls/<hostname>/{gau,waymore,waybackurls,all_urls}.txt
+url_harvest_wo_katana() {
+    local input="$1"
+
+    if [[ -z "$input" ]]; then
+        echo "[!] Usage: url_harvest_wo_katana <file.txt|url>"
+        return 1
+    fi
+
+    local tools=(gau waymore waybackurls anew)
+    for tool in "${tools[@]}"; do
+        if ! command -v "$tool" &>/dev/null; then
+            echo "[!] Missing dependency: $tool"
+            return 1
+        fi
+    done
+
+    local hosts=()
+    if [[ -f "$input" ]]; then
+        while IFS= read -r line || [[ -n "$line" ]]; do
+            [[ -z "$line" ]] && continue
+            hosts+=("$line")
+        done < "$input"
+    else
+        hosts+=("$input")
+    fi
+
+    for host in "${hosts[@]}"; do
+        local hostname="${host#https://}"
+        hostname="${hostname#http://}"
+        hostname="${hostname%/}"
+
+        local base="$(pwd)/urls/$hostname"
+        mkdir -p "$base"
+
+        echo ""
+        echo "[+] Harvesting (no katana): $hostname"
+
+        echo "  [*] Running gau"
+        gau "$hostname" --o "$base/gau.txt"
+
+        echo "  [*] Running waymore"
+        waymore -i "$hostname" -mode U -oU "$base/waymore.txt"
+
+        echo "  [*] Running waybackurls"
+        waybackurls "$hostname" -no-subs \
+            | anew "$base/waybackurls.txt"
+
+        echo "  [+] Deduping into all_urls.txt"
+        cat "$base/gau.txt" \
+            "$base/waymore.txt" \
+            "$base/waybackurls.txt" \
+            2>/dev/null \
+            | sort -u \
+            | anew "$base/all_urls.txt"
+
+        echo "  [+] Done — $(wc -l < "$base/all_urls.txt") unique URLs"
+        echo "  [+] Output: $base/"
+    done
+}
+
 # ─── ffm ──────────────────────────────────────────────────────────────────────
 # Usage: ffm https://target.com
 ffm() {

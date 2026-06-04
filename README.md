@@ -161,6 +161,27 @@ Dependencies: `katana`, `gau`, `waymore`, `waybackurls`, `anew`
 
 ---
 
+### `url_harvest_wo_katana` — URL Collection (No Katana)
+
+Same as `url_harvest` but skips katana entirely. For data-heavy targets where crawling millions of static assets wastes time.
+
+```bash
+url_harvest_wo_katana live/httpx_simple.txt   # file with one host per line
+url_harvest_wo_katana https://sub.target.com  # single host
+```
+
+Output per host:
+```text
+./<hostname>/gau.txt
+./<hostname>/waymore.txt
+./<hostname>/waybackurls.txt
+./<hostname>/all_urls.txt           ← deduplicated
+```
+
+Dependencies: `gau`, `waymore`, `waybackurls`, `anew`
+
+---
+
 ### `ffm` — FFUF Directory Bruteforce
 
 ```bash
@@ -225,11 +246,11 @@ export PDTM_API=""
 | `assetfinder` | subs |
 | `httpx` | hx |
 | `katana` | kat, url_harvest |
-| `gau` | url_harvest |
-| `waymore` | url_harvest |
-| `waybackurls` | url_harvest |
+| `gau` | url_harvest, url_harvest_wo_katana |
+| `waymore` | url_harvest, url_harvest_wo_katana |
+| `waybackurls` | url_harvest, url_harvest_wo_katana |
 | `ffuf` | ffm |
-| `anew` | subs, hx, url_harvest |
+| `anew` | subs, hx, url_harvest, url_harvest_wo_katana |
 | `jq` | subs |
 | `github-subdomains` | subs |
 | `rg` (ripgrep) | js_harvest, js_harvest_all |
