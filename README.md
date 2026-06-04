@@ -173,6 +173,34 @@ Dependencies: `ffuf`
 
 ---
 
+### `js_harvest` — Extract JS File URLs
+
+Extracts JS/JSX/MJS/CJS file URLs from a list of URLs using `rg`.
+
+```bash
+js_harvest urls/target.com/all_urls.txt
+```
+
+Output: `./js_files.txt`
+
+Dependencies: `rg` (ripgrep), `sort`
+
+---
+
+### `js_harvest_all` — Batch JS Harvest
+
+Iterates over every hostdir under `./urls/`, runs `js_harvest` per host, and combines results.
+
+```bash
+js_harvest_all
+```
+
+Output: `./urls/<hostname>/js_files.txt` (per host) + `./js_files_all.txt` (combined, deduplicated)
+
+Dependencies: `rg` (ripgrep), `sort`
+
+---
+
 ## Secrets
 
 Never tracked. Create manually or let bootstrap generate it from the example:
@@ -204,6 +232,7 @@ export PDTM_API=""
 | `anew` | subs, hx, url_harvest |
 | `jq` | subs |
 | `github-subdomains` | subs |
+| `rg` (ripgrep) | js_harvest, js_harvest_all |
 
 Install most via [pdtm](https://github.com/projectdiscovery/pdtm).
 

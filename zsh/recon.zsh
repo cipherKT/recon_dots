@@ -32,7 +32,6 @@ subs() {
     assetfinder --subs-only "$domain" \
         | anew "$base/assetfinder.txt"
 
-
     echo "[+] Running crt.sh"
     curl -s "https://crt.sh/?q=%25.$domain&output=json" \
         | jq -r '.[].name_value' \
@@ -52,7 +51,7 @@ subs() {
 
 # ─── hx ───────────────────────────────────────────────────────────────────────
 # Usage: hx passive/all_subs.txt   (or any subs file)
-# Output: ./live/httpx.txt
+# Output: ./live/httpx.txt, ./live/httpx_simple.txt
 hx() {
     local input="$1"
     if [[ -z "$input" ]]; then
@@ -130,7 +129,7 @@ kat() {
 # ─── url_harvest ──────────────────────────────────────────────────────────────
 # Usage: url_harvest <file.txt|url>
 # File: one host per line (https://sub.target.com or sub.target.com)
-# Output: .urls/<hostname>/katana.txt, gau.txt, waymore.txt, waybackurls.txt, all_urls.txt
+# Output: ./urls/<hostname>/{katana,gau,waymore,waybackurls,all_urls}.txt
 url_harvest() {
     local input="$1"
 
@@ -223,65 +222,79 @@ ffm() {
         -fc 404
 }
 
-# ─── js_harvest ─────────────────────────────────────────────────────────────────
+# ─── js_harvest ───────────────────────────────────────────────────────────────
 # Usage: js_harvest <urls.txt>
 # Output: ./js_files.txt
-# Extracts all .js file URLs from a list of URLs
 js_harvest() {
-    local input="$1"
+  local input="$1"
+  if [[ -z "$input" ]]; then 
+    echo "[!] Usage: js_harvest <urls.txt>"
+    return 1
+  fi 
 
-    if [[ -z "$input" ]]; then
-        echo "[!] Usage: js_harvest <urls.txt>"
-        return 1
-    fi
-    if [[ ! -f "$input" ]]; then
-        echo "[!] File not found: $input"
-        return 1
-    fi
+  if [[ ! -f "$input" ]]; then 
+    echo "[!] File not found: $input"
+    return 1
+  fi 
 
-    local output="$(pwd)/js_files.txt"
+  local output="$(pwd)/js_files.txt"
 
-    echo "[*] Extracting JS files from $input"
-    grep -Eo 'https?://[^"'"'"' ]+\.js([?#][^"'"'"' ]*)?' "$input" \
-        | sort -u \
-        | anew "$output"
+  rg '\.js' "$input" | sort -u > "$output"
 
-    echo "[+] Output: $output"
-    echo "[+] JS files found: $(wc -l < "$output")"
+  echo "[+] Ouput saved to: $output"
+  echo "[+] JS/JSON files found: $(wc -l < "$output")"
+
 }
 
-# ─── js_harvest_all ─────────────────────────────────────────────────────────────
+# ─── js_harvest all ───────────────────────────────────────────────────────────────
 # Usage: js_harvest_all
-# Reads all_urls.txt from every subdomain dir under ./urls/<hostname>/
-# Output: ./urls/<hostname>/js_files.txt (per host) + ./js_files_all.txt (combined)
-js_harvest_all() {
-    local urls_dir="$(pwd)/urls"
-    if [[ ! -d "$urls_dir" ]]; then
-        echo "[!] No ./urls/ directory found"
-        return 1
-    fi
+# Reads ./urls/<hostname>/all_urls.txt
+# Output: ./urls/<hostname>/js_files.txt
+js_harvest_all(){
+  # echo "Harvesting all js files"
+  local url_dir="$PWD/urls"
+  # echo "hui hui hui hui just after urls directory"
+  local combined="$PWD/js_files_all.txt"
+  [[ -f "$combined" ]] && rm -f "$combined"
+  touch "$combined"
+  # echo "hui hui hui hui after combined declaration"
+  if [[ ! -d "$url_dir" ]]; then 
+    echo "[!] No urls directory found. Run url_harvest first"
+    return 1
+  else 
+    echo "[+] urls directory found"
+  fi 
 
-    local all_combined="$(pwd)/js_files_all.txt"
-    > "$all_combined"
+  for dir in "$url_dir"/*/; do 
+    [[ ! -d "$dir" ]] && continue
+    local hostname="$(basename "$dir")"
+    local input="$dir/all_urls.txt"
+    local output="$dir/js_files.txt"
 
-    for hostdir in "$urls_dir"/*/; do
-        local hostname="$(basename "$hostdir")"
-        local input="$hostdir/all_urls.txt"
+    # echo "----------Debug-------------"
+    # echo "$hostname, $input, $output"
 
-        if [[ ! -f "$input" ]]; then
-            echo "  [-] Skipping $hostname (no all_urls.txt)"
-            continue
-        fi
+    if [[ ! -f "$input" ]]; then 
+      echo "  [-] skipping $hostname. No urls file found"
+      continue
+    fi 
 
-        echo "  [*] $hostname"
-        js_harvest "$input" > /dev/null
-        cp "$(pwd)/js_files.txt" "$hostdir/js_files.txt"
-        cat "$hostdir/js_files.txt" >> "$all_combined"
-    done
-    rm -f "$(pwd)/js_files.txt"
+    rg '\.js' "$input" | sort -u > "$output"
+    
+    local count=$(wc -l < "$output")
+      
+    if [[ $count -gt 0 ]]; then 
+      cat "$output" >> "$combined"
+      echo "[+] $hostname - $count js files"
+    else 
+      echo "[-] $hostname - no js files found"
+    fi 
+  done
 
-    sort -u -o "$all_combined" "$all_combined"
+  sort -u -o "$combined" "$combined"
+  echo ""
+  echo "[+] Per-host: .urls/<hostname>/js_files.txt"
+  echo "[+] Combined: $combined ($(wc -l < "$combined") unique)"
 
-    echo "[+] Done — per-host JS files in ./urls/<hostname>/js_files.txt"
-    echo "[+] Combined: $all_combined ($(wc -l < "$all_combined") unique)"
+
 }
