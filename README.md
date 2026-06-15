@@ -154,10 +154,12 @@ Output per host:
 ./<hostname>/gau.txt
 ./<hostname>/waymore.txt
 ./<hostname>/waybackurls.txt
-./<hostname>/all_urls.txt           ← deduplicated
+./<hostname>/all_urls.txt           ← deduplicated per host
 ```
 
-Dependencies: `katana`, `gau`, `waymore`, `waybackurls`, `anew`
+Also creates a combined, deduplicated `./all_urls.txt` in the recon root via `urldedupe`.
+
+Dependencies: `katana`, `gau`, `waymore`, `waybackurls`, `anew`, `urldedupe`
 
 ---
 
@@ -175,10 +177,12 @@ Output per host:
 ./<hostname>/gau.txt
 ./<hostname>/waymore.txt
 ./<hostname>/waybackurls.txt
-./<hostname>/all_urls.txt           ← deduplicated
+./<hostname>/all_urls.txt           ← deduplicated per host
 ```
 
-Dependencies: `gau`, `waymore`, `waybackurls`, `anew`
+Also creates a combined, deduplicated `./all_urls.txt` in the recon root via `urldedupe`.
+
+Dependencies: `gau`, `waymore`, `waybackurls`, `anew`, `urldedupe`
 
 ---
 
@@ -258,6 +262,11 @@ export PDTM_API=""
 Install most via [pdtm](https://github.com/projectdiscovery/pdtm).
 
 ---
+
+## TODO
+
+- [ ] **Full pipeline** — a single command that chains `subs → hx → url_harvest → js_harvest_all` (or configurable steps).
+- [ ] **Modularize `recon.zsh`** — split into `zsh/recon/*.zsh` files (one per wrapper) and source them all in `recon.zsh`, which becomes only the full pipeline function.
 
 ## Philosophy
 

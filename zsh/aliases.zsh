@@ -4,7 +4,7 @@ unalias gf  2>/dev/null || true
 # ─── General ──────────────────────────────────────────────────────────────────
 alias ll='ls -lah'
 alias zshreload='source ~/.zshrc'
-
+alias urldedupe='/home/cipher/BugBounty/tools/urldedupe/urldedupe'
 # ─── Recon shortcuts ──────────────────────────────────────────────────────────
 alias passive='ls passive/ 2>/dev/null || echo "[!] No passive/ dir here"'
 alias live='ls live/ 2>/dev/null || echo "[!] No live/ dir here"'

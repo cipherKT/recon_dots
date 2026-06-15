@@ -200,6 +200,13 @@ url_harvest() {
         echo "  [+] Done — $(wc -l < "$base/all_urls.txt") unique URLs"
         echo "  [+] Output: $base/"
     done
+
+    echo ""
+    echo "[+] Creating combined deduplicated all_urls.txt via urldedupe"
+    cat "$(pwd)/urls/"*/all_urls.txt 2>/dev/null \
+        | urldedupe \
+        | anew "$(pwd)/all_urls.txt"
+    echo "[+] Combined: $(pwd)/all_urls.txt ($(wc -l < "$(pwd)/all_urls.txt") unique)"
 }
 
 # ─── url_harvest_wo_katana ─────────────────────────────────────────────────────
@@ -265,6 +272,13 @@ url_harvest_wo_katana() {
         echo "  [+] Done — $(wc -l < "$base/all_urls.txt") unique URLs"
         echo "  [+] Output: $base/"
     done
+
+    echo ""
+    echo "[+] Creating combined deduplicated all_urls.txt via urldedupe"
+    cat "$(pwd)/urls/"*/all_urls.txt 2>/dev/null \
+        | urldedupe \
+        | anew "$(pwd)/all_urls.txt"
+    echo "[+] Combined: $(pwd)/all_urls.txt ($(wc -l < "$(pwd)/all_urls.txt") unique)"
 }
 
 # ─── ffm ──────────────────────────────────────────────────────────────────────
