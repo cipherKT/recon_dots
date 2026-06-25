@@ -139,13 +139,36 @@ Dependencies: `katana`
 
 ---
 
-### `url_harvest` — Full URL Collection
+### `url_harvest` — URL Collection (No Katana)
 
-Runs katana, gau, waymore, and waybackurls per host. Creates a subdirectory per hostname and deduplicates all results into `all_urls.txt`.
+Skips katana entirely — for data-heavy targets where crawling millions of static assets wastes time.
 
 ```bash
 url_harvest live/httpx_simple.txt   # file with one host per line
 url_harvest https://sub.target.com  # single host
+```
+
+Output per host:
+```text
+./<hostname>/gau.txt
+./<hostname>/waymore.txt
+./<hostname>/waybackurls.txt
+./<hostname>/all_urls.txt           ← deduplicated per host
+```
+
+Also creates a combined, deduplicated `./all_urls.txt` in the recon root via `urldedupe`.
+
+Dependencies: `gau`, `waymore`, `waybackurls`, `anew`, `urldedupe`
+
+---
+
+### `url_harvest_katana` — Full URL Collection
+
+Runs katana, gau, waymore, and waybackurls per host. Creates a subdirectory per hostname and deduplicates all results into `all_urls.txt`.
+
+```bash
+url_harvest_katana live/httpx_simple.txt   # file with one host per line
+url_harvest_katana https://sub.target.com  # single host
 ```
 
 Output per host:
@@ -160,29 +183,6 @@ Output per host:
 Also creates a combined, deduplicated `./all_urls.txt` in the recon root via `urldedupe`.
 
 Dependencies: `katana`, `gau`, `waymore`, `waybackurls`, `anew`, `urldedupe`
-
----
-
-### `url_harvest_wo_katana` — URL Collection (No Katana)
-
-Same as `url_harvest` but skips katana entirely. For data-heavy targets where crawling millions of static assets wastes time.
-
-```bash
-url_harvest_wo_katana live/httpx_simple.txt   # file with one host per line
-url_harvest_wo_katana https://sub.target.com  # single host
-```
-
-Output per host:
-```text
-./<hostname>/gau.txt
-./<hostname>/waymore.txt
-./<hostname>/waybackurls.txt
-./<hostname>/all_urls.txt           ← deduplicated per host
-```
-
-Also creates a combined, deduplicated `./all_urls.txt` in the recon root via `urldedupe`.
-
-Dependencies: `gau`, `waymore`, `waybackurls`, `anew`, `urldedupe`
 
 ---
 
@@ -249,12 +249,12 @@ export PDTM_API=""
 | `subfinder` | subs |
 | `assetfinder` | subs |
 | `httpx` | hx |
-| `katana` | kat, url_harvest |
-| `gau` | url_harvest, url_harvest_wo_katana |
-| `waymore` | url_harvest, url_harvest_wo_katana |
-| `waybackurls` | url_harvest, url_harvest_wo_katana |
+| `katana` | kat, url_harvest_katana |
+| `gau` | url_harvest, url_harvest_katana |
+| `waymore` | url_harvest, url_harvest_katana |
+| `waybackurls` | url_harvest, url_harvest_katana |
 | `ffuf` | ffm |
-| `anew` | subs, hx, url_harvest, url_harvest_wo_katana |
+| `anew` | subs, hx, url_harvest, url_harvest_katana |
 | `jq` | subs |
 | `github-subdomains` | subs |
 | `rg` (ripgrep) | js_harvest, js_harvest_all |
@@ -266,7 +266,8 @@ Install most via [pdtm](https://github.com/projectdiscovery/pdtm).
 ## TODO
 
 - [ ] **Full pipeline** — a single command that chains `subs → hx → url_harvest → js_harvest_all` (or configurable steps).
-- [ ] **Modularize `recon.zsh`** — split into `zsh/recon/*.zsh` files (one per wrapper) and source them all in `recon.zsh`, which becomes only the full pipeline function.
+- [x] **Modularize `recon.zsh`** — split into `zsh/recon/*.zsh` files (one per wrapper) and source them all in `recon.zsh`, which becomes only the full pipeline function.
+- [ ] **sinkfinder command** — a wrapper that takes a JS/TXT file and searches for DOM-based vulnerability sinks using a predefined list of sinks (e.g., stored in a new `resources/sinks.txt` file in this repository).
 
 ## Philosophy
 

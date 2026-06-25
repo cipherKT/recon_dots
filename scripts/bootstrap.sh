@@ -12,6 +12,9 @@ for f in aliases exports functions paths recon; do
     echo "    linked $f.zsh"
 done
 
+ln -sfn "$DOTFILES_DIR/zsh/recon" "$ZSH_CONFIG/recon"
+echo "    linked recon/ directory"
+
 # Copy zshrc from scripts/
 cp "$DOTFILES_DIR/scripts/zshrc" "$HOME/.zshrc"
 echo "[+] Copied zshrc to ~/.zshrc"

@@ -12,5 +12,5 @@ alias live='ls live/ 2>/dev/null || echo "[!] No live/ dir here"'
 # ─── Quick navs──────────────────────────────────────────────────────────
 alias bb='cd ~/BugBounty/'
 alias dots='cd ~/BugBounty/recon_dots/'
-alias edit_dots='cd ~/BugBounty/recon_dots/ && nvim .'
+alias edit_dots='cd ~/BugBounty/recon_dots/ && zeditor .'
 
