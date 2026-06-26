@@ -32,6 +32,7 @@ chmod +x scripts/bootstrap.sh
 ```
 
 This will:
+
 - Symlink all `zsh/*.zsh` files to `~/.config/zsh/`
 - Copy `scripts/zshrc` to `~/.zshrc`
 - Install `zsh-autosuggestions` and `zsh-syntax-highlighting` oh-my-zsh plugins
@@ -89,6 +90,7 @@ subs target.com
 ```
 
 Output:
+
 ```text
 ./passive/subfinder.txt
 ./passive/assetfinder.txt
@@ -112,6 +114,7 @@ hx passive/all_subs.txt
 ```
 
 Output:
+
 ```text
 ./live/httpx.txt           ← full httpx output
 ./live/httpx_simple.txt    ← URLs only (col 1)
@@ -131,6 +134,7 @@ kat https://sub.target.com
 ```
 
 Output:
+
 ```text
 ./katana.txt
 ```
@@ -149,6 +153,7 @@ url_harvest https://sub.target.com  # single host
 ```
 
 Output per host:
+
 ```text
 ./<hostname>/gau.txt
 ./<hostname>/waymore.txt
@@ -172,6 +177,7 @@ url_harvest_katana https://sub.target.com  # single host
 ```
 
 Output per host:
+
 ```text
 ./<hostname>/katana.txt
 ./<hostname>/gau.txt
