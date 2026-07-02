@@ -1,9 +1,9 @@
 # ─── ffm ──────────────────────────────────────────────────────────────────────
-# Usage: ffm https://target.com
+# Usage: ffm https://target.com/FUZZ
 ffm() {
     local url="${1%/}"
     if [[ -z "$url" ]]; then
-        echo "[!] Usage: ffm https://target.com"
+        echo "[!] Usage: ffm https://target.com/FUZZ"
         return 1
     fi
     if [[ -z "$WL_DIRB" || ! -f "$WL_DIRB" ]]; then
@@ -12,7 +12,7 @@ ffm() {
     fi
 
     ffuf \
-        -u "$url/FUZZ" \
+        -u "$url" \
         -w "$WL_DIRB" \
         -mc all \
         -fc 404
