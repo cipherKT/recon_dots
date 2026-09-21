@@ -83,7 +83,9 @@ All wrappers output to the **current directory**. The expected workflow is:
 
 ### `subs` — Subdomain Enumeration
 
-Runs subfinder, assetfinder, crt.sh, and github-subdomains.
+Runs subfaster, subfinder, assetfinder, crt.sh, and github-subdomains for each
+domain. Missing tools are skipped; crt.sh is best effort because the service
+can be unavailable.
 
 ```bash
 subs target.com
@@ -92,15 +94,13 @@ subs target.com
 Output:
 
 ```text
-./passive/subfinder.txt
-./passive/assetfinder.txt
-./passive/crtsh.txt
-./passive/github.txt
-./passive/all_subs.txt     ← deduplicated
+./passive/target.com.txt       ← merged result for the domain
+./passive/target.com/          ← raw output from each source
+./passive/all_subs.txt         ← deduplicated across all domains
 ```
 
-Dependencies: `subfinder`, `assetfinder`, `jq`, `anew`, `github-subdomains`, `curl`
-Requires: `$GITHUB_TOKEN` in secrets.zsh
+Dependencies: `subfaster`, `subfinder`, `assetfinder`, `jq`, `github-subdomains`, `curl`
+`github-subdomains` uses `$GITHUB_TOKEN` when it is set.
 
 ---
 
@@ -266,6 +266,9 @@ export PDTM_API=""
 | `rg` (ripgrep) | js_harvest, js_harvest_all |
 
 Install most via [pdtm](https://github.com/projectdiscovery/pdtm).
+Or install everything at once with the `install-recon` alias
+(`scripts/install-recon-tools.sh`) — pending manual steps
+(e.g. API tokens) are printed at the end, only if still incomplete.
 
 ---
 

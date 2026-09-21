@@ -45,6 +45,10 @@ if [[ ! -f "$ZSH_CONFIG/secrets.zsh" ]]; then
 fi
 chmod 600 "$ZSH_CONFIG/secrets.zsh"
 
+# Recon tool installer — keep executable (invoked via the `install-recon` alias)
+chmod +x "$DOTFILES_DIR/scripts/install-recon-tools.sh"
+echo "[+] install-recon alias ready (run it after 'source ~/.zshrc' to install recon tools)"
+
 # ─── Wordlists ────────────────────────────────────────────────────────────────
 WORDLISTS="$HOME/BugBounty/wordlists"
 mkdir -p "$WORDLISTS"

@@ -13,3 +13,11 @@ export GOPATH=$HOME/go
 export PATH="$PATH:$GOROOT/bin"
 export PATH="$PATH:$GOPATH/bin"
 export PATH="$PATH:$HOME/.pdtm/go/bin"
+
+
+# ─── Android ─────────────────────────────────────────────────────────────────────
+export ANDROID_HOME="$HOME/security/Android"
+export PATH="$PATH:$ANDROID_HOME/platform-tools"
+export PATH="$PATH:$ANDROID_HOME/emulator"
+export PATH="$PATH:$ANDROID_HOME/cmdline-tools/latest/bin"
+export ANDROID_AVD_HOME="$HOME/.config/.android/avd"

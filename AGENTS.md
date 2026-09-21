@@ -33,9 +33,10 @@
 subs target.com
 ```
 
-Output: `./passive/{subfinder,assetfinder,crtsh,github,all_subs}.txt`
-Requires: `$GITHUB_TOKEN` in secrets.zsh
-Dependencies: subfinder, assetfinder, jq, anew, github-subdomains, curl
+Output: `./passive/<domain>.txt`, raw per-source files under
+`./passive/<domain>/`, and merged `./passive/all_subs.txt`
+Uses `$GITHUB_TOKEN` for `github-subdomains` when it is set
+Dependencies: subfaster, subfinder, assetfinder, jq, github-subdomains, curl
 
 ### `hx` — HTTP Probing
 
