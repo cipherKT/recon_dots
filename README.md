@@ -155,13 +155,14 @@ url_harvest https://sub.target.com  # single host
 Output per host:
 
 ```text
-./<hostname>/gau.txt
-./<hostname>/waymore.txt
-./<hostname>/waybackurls.txt
-./<hostname>/all_urls.txt           ← deduplicated per host
+./urls/<hostname>/gau.txt
+./urls/<hostname>/waymore.txt
+./urls/<hostname>/waybackurls.txt
+./urls/<hostname>/all_urls.txt      ← deduplicated per host
 ```
 
-Also creates a combined, deduplicated `./all_urls.txt` in the recon root via `urldedupe`.
+For file input, also creates a combined, deduplicated `./all_urls.txt` in the recon root via `urldedupe`.
+When a **single URL** is passed, the tools run concurrently flat into `$PWD` — `./gau.txt`, `./waymore.txt`, `./waybackurls.txt`, `./all_urls.txt` with no `urls/` dir (and `-t` is ignored).
 
 Dependencies: `gau`, `waymore`, `waybackurls`, `anew`, `urldedupe`
 
@@ -179,14 +180,15 @@ url_harvest_katana https://sub.target.com  # single host
 Output per host:
 
 ```text
-./<hostname>/katana.txt
-./<hostname>/gau.txt
-./<hostname>/waymore.txt
-./<hostname>/waybackurls.txt
-./<hostname>/all_urls.txt           ← deduplicated per host
+./urls/<hostname>/katana.txt
+./urls/<hostname>/gau.txt
+./urls/<hostname>/waymore.txt
+./urls/<hostname>/waybackurls.txt
+./urls/<hostname>/all_urls.txt      ← deduplicated per host
 ```
 
-Also creates a combined, deduplicated `./all_urls.txt` in the recon root via `urldedupe`.
+For file input, also creates a combined, deduplicated `./all_urls.txt` in the recon root via `urldedupe`.
+When a **single URL** is passed, the tools run concurrently flat into `$PWD` — `./katana.txt`, `./gau.txt`, `./waymore.txt`, `./waybackurls.txt`, `./all_urls.txt` with no `urls/` dir (and `-t` is ignored).
 
 Dependencies: `katana`, `gau`, `waymore`, `waybackurls`, `anew`, `urldedupe`
 

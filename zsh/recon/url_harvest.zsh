@@ -1,9 +1,11 @@
 # ─── url_harvest ──────────────────────────────────────────────────────────────
 # Usage: url_harvest [-t threads] <file.txt|url>
 # File: one host per line (https://sub.target.com or sub.target.com)
-# Output: ./urls/<hostname>/{gau,waymore,waybackurls,all_urls}.txt
+# Output (file input): ./urls/<hostname>/{gau,waymore,waybackurls,all_urls}.txt + combined ./all_urls.txt
+# Output (single URL): ./gau.txt, ./waymore.txt, ./waybackurls.txt, ./all_urls.txt in $PWD (no urls/ dir)
 # Skips Katana — for data-heavy targets where crawling would waste time.
 # Tools run in parallel per host; hosts run in parallel up to -t (default 3, max 15).
+# Single URL: tools run concurrently flat into $PWD; -t is ignored.
 url_harvest() {
     # ── parse flags ──
     local max_threads=3
@@ -37,6 +39,7 @@ url_harvest() {
 
     # build list of hosts — single URL or file
     local hosts=()
+    local single_input=0
     if [[ -f "$input" ]]; then
         while IFS= read -r line || [[ -n "$line" ]]; do
             [[ -z "$line" ]] && continue
@@ -44,20 +47,29 @@ url_harvest() {
         done < "$input"
     else
         hosts+=("$input")
+        single_input=1
     fi
 
     local total=${#hosts[@]}
-    echo "[+] url_harvest — $total host(s), $max_threads thread(s)"
-    echo "[+] Max concurrent processes: $((max_threads * 3)) (${max_threads} hosts × 3 tools)"
+    if (( single_input )); then
+        echo "[+] url_harvest — single URL (all tools run concurrently)"
+    else
+        echo "[+] url_harvest — $total host(s), $max_threads thread(s)"
+        echo "[+] Max concurrent processes: $((max_threads * 3)) (${max_threads} hosts × 3 tools)"
+    fi
+
+    # strip scheme / trailing slash — clean hostname used as dir name
+    _url_harvest_hostname() {
+        local hostname="${1#https://}"
+        hostname="${hostname#http://}"
+        hostname="${hostname%/}"
+        echo "$hostname"
+    }
 
     # ── worker: runs all tools in parallel for a single host ──
     _url_harvest_worker() {
         local host="$1"
-
-        # strip scheme for clean hostname used as dir name
-        local hostname="${host#https://}"
-        hostname="${hostname#http://}"
-        hostname="${hostname%/}"
+        local hostname="$(_url_harvest_hostname "$host")"
 
         local base="$(pwd)/urls/$hostname"
         mkdir -p "$base"
@@ -79,6 +91,35 @@ url_harvest() {
         local count=$(wc -l < "$base/all_urls.txt" 2>/dev/null || echo 0)
         echo "  [✓] $hostname — $count unique URLs"
     }
+
+    # ── single URL: flat output in $PWD — no urls/ dir ──
+    # Individual tool files + combined ./all_urls.txt live in the current directory.
+    if (( single_input )); then
+        local host="${hosts[1]}"
+        local hostname="$(_url_harvest_hostname "$host")"
+
+        local base="$(pwd)"
+
+        # run tools in parallel — each writes to its own file in $PWD
+        gau "$hostname" --o "$base/gau.txt"                             > /dev/null 2>&1 &
+        waymore -i "$hostname" -mode U -oU "$base/waymore.txt"          > /dev/null 2>&1 &
+        (waybackurls "$hostname" -no-subs | anew "$base/waybackurls.txt") > /dev/null 2>&1 &
+        wait
+
+        # combine into ./all_urls.txt
+        cat "$base/gau.txt" \
+            "$base/waymore.txt" \
+            "$base/waybackurls.txt" \
+            2>/dev/null \
+            | sort -u \
+            | anew "$base/all_urls.txt"
+
+        local count=$(wc -l < "$base/all_urls.txt" 2>/dev/null || echo 0)
+        echo "  [✓] $hostname — $count unique URLs"
+        echo ""
+        echo "[+] Output: $(pwd)/all_urls.txt"
+        return 0
+    fi
 
     # ── thread pool (zsh-compatible: no wait -n) ──
     # Track worker PIDs in an array; when full, wait for the oldest to finish.
