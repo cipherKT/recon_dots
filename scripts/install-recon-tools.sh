@@ -182,7 +182,7 @@ GO_TOOLS=(
   "anew:github.com/tomnomnom/anew@latest"
   "github-subdomains:github.com/gwen001/github-subdomains@latest"
   "ffuf:github.com/ffuf/ffuf/v2@latest"
-  "shortscan:github.com/bitquark/shortscan@latest"
+  "shortscan:github.com/bitquark/shortscan/cmd/shortscan@latest"
 )
 
 install_go_tools() {
