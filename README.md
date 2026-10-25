@@ -1,71 +1,82 @@
 # recon_dots
 
-Personal recon and bug bounty environment for Arch Linux / Omarchy.
-Modular zsh configuration with reusable recon wrappers, portable environment variables, and a one-shot bootstrap.
+Reusable zsh recon scripts. This repository manages recon wrappers and their
+dependency installer only; your shell configuration stays yours.
 
----
+## Setup
+
+```bash
+bash scripts/bootstrap.sh
+```
+
+Bootstrap links `zsh/recon.zsh` into
+`${XDG_CONFIG_HOME:-$HOME/.config}/recon-dots/recon.zsh` and prints the exact
+`source` line to add to your existing `~/.zshrc`. It does not edit your shell
+startup files, install plugins, clone wordlists, or manage secrets.
+Keep this checkout in place because the loader is symlinked to it.
+You can also source `zsh/recon.zsh` directly without bootstrap.
+
+Install or inspect dependencies separately:
+
+```bash
+bash scripts/install-recon-tools.sh --check-only
+bash scripts/install-recon-tools.sh
+```
+
+The installer supports `--upgrade` and `-y`. Ensure `~/go/bin`,
+`~/.pdtm/go/bin`, and `~/.local/bin` are on your existing shell PATH
+(or the appropriate Go bin directory if you customize Go's installation).
+It installs `urldedupe` as a command in `~/.local/bin`; no alias is required.
+Its source/build directory defaults to `~/security/BugBounty/tools/urldedupe`
+and can be overridden with `URLDEDUPE_DIR`.
+
+Provide `GITHUB_TOKEN` through your own environment or secrets setup to enable
+the GitHub source in `subs`. No tokens are stored or sourced by this repository.
+
+## Kali Linux
+
+Kali is supported through the installer's Debian/apt package mapping. The
+wrappers require **zsh**, even if your login shell is Bash. The installer
+includes zsh for minimal installations and uses pipx for waymore, following
+[Kali's Python application guidance](https://www.kali.org/docs/general-use/python3-external-packages/).
+It does not bypass the system Python environment protections.
+
+Run setup as your normal user so Go and pipx tools belong to that user:
+
+```bash
+bash scripts/install-recon-tools.sh
+bash scripts/bootstrap.sh
+zsh
+```
+
+Run the source line printed by bootstrap in zsh and add it to your existing
+`~/.zshrc` for future terminals. Add the tool directories to your own PATH if
+needed, placing Go tools before system commands to avoid unrelated binaries
+with the same name (especially Python's `httpx`):
+
+```zsh
+export PATH="$HOME/go/bin:$HOME/.pdtm/go/bin:$HOME/.local/bin:$PATH"
+```
+
+System packages use sudo for ordinary users; root environments call the package
+manager directly. Running the whole installer as root installs user tools for
+root. No Kali theme, prompt, aliases, or startup configuration is replaced.
+
+## Migrating an older installation
+
+Older bootstrap versions replaced `~/.zshrc` and linked general shell modules
+into `~/.config/zsh`. This bootstrap leaves those existing files alone.
+Before switching, copy any personal settings you want to retain out of the
+old repo-linked modules, remove their obsolete links/source entries, and add
+the new loader's source line. Existing secrets remain yours to manage.
+The old `install-recon` alias is replaced by the explicit installer command above.
 
 ## Structure
 
-```text
-.
-├── README.md
-├── scripts/
-│   ├── bootstrap.sh
-│   └── zshrc
-└── zsh/
-    ├── aliases.zsh
-    ├── exports.zsh
-    ├── functions.zsh
-    ├── paths.zsh
-    ├── recon.zsh
-    └── secrets.example.zsh
-```
-
----
-
-## Bootstrap
-
-```bash
-chmod +x scripts/bootstrap.sh
-./scripts/bootstrap.sh
-```
-
-This will:
-
-- Symlink all `zsh/*.zsh` files to `~/.config/zsh/`
-- Copy `scripts/zshrc` to `~/.zshrc`
-- Install `zsh-autosuggestions` and `zsh-syntax-highlighting` oh-my-zsh plugins
-- Create `~/.config/zsh/secrets.zsh` from the example if it doesn't exist
-- Clone SecLists, jeanphorn, and orwa wordlists into `~/BugBounty/wordlists/`
-
----
-
-## ZSH Modules
-
-| File | Purpose |
-| --- | --- |
-| `aliases.zsh` | Shell aliases and oh-my-zsh conflict unaliases |
-| `exports.zsh` | Environment variables and wordlist paths |
-| `functions.zsh` | Generic helper functions |
-| `paths.zsh` | PATH configuration |
-| `recon.zsh` | Recon and bug bounty wrappers |
-| `secrets.zsh` | API tokens — not tracked, lives only in `~/.config/zsh/` |
-
----
-
-## Wordlists
-
-Wordlists live at `~/BugBounty/wordlists/`. Configured in `exports.zsh`:
-
-```bash
-$WL_COMMON    # common.txt
-$WL_DIRB      # directory-list-2.3-medium.txt
-$WL_RAFT      # raft-medium-directories.txt
-$WL_PARAMS    # burp-parameter-names.txt
-```
-
----
+- `zsh/recon/*.zsh`: recon wrappers, one per file.
+- `zsh/recon.zsh`: loads wrappers without changing aliases, PATH, or shell preferences.
+- `scripts/bootstrap.sh`: links the recon loader.
+- `scripts/install-recon-tools.sh`: installs recon tool dependencies.
 
 ## Recon Wrappers
 
@@ -194,18 +205,6 @@ Dependencies: `katana`, `gau`, `waymore`, `waybackurls`, `anew`, `urldedupe`
 
 ---
 
-### `ffm` — FFUF Directory Bruteforce
-
-```bash
-ffm https://target.com
-```
-
-Uses `$WL_DIRB`. Filters all status codes except 404.
-
-Dependencies: `ffuf`
-
----
-
 ### `js_harvest` — Extract JS File URLs
 
 Extracts JS/JSX/MJS/CJS file URLs from a list of URLs using `rg`.
@@ -234,54 +233,8 @@ Dependencies: `rg` (ripgrep), `sort`
 
 ---
 
-## Secrets
-
-Never tracked. Create manually or let bootstrap generate it from the example:
-
-```text
-~/.config/zsh/secrets.zsh
-```
-
-```bash
-export GITHUB_TOKEN=""
-export SHODAN_SECRET=""
-export PDTM_API=""
-```
-
----
-
-## Dependencies
-
-| Tool | Used in |
-| --- | --- |
-| `subfinder` | subs |
-| `assetfinder` | subs |
-| `httpx` | hx |
-| `katana` | kat, url_harvest_katana |
-| `gau` | url_harvest, url_harvest_katana |
-| `waymore` | url_harvest, url_harvest_katana |
-| `waybackurls` | url_harvest, url_harvest_katana |
-| `ffuf` | ffm |
-| `anew` | subs, hx, url_harvest, url_harvest_katana |
-| `jq` | subs |
-| `github-subdomains` | subs |
-| `rg` (ripgrep) | js_harvest, js_harvest_all |
-
-Install most via [pdtm](https://github.com/projectdiscovery/pdtm).
-Or install everything at once with the `install-recon` alias
-(`scripts/install-recon-tools.sh`) — pending manual steps
-(e.g. API tokens) are printed at the end, only if still incomplete.
-
----
-
-## TODO
-
-- [ ] **Full pipeline** — a single command that chains `subs → hx → url_harvest → js_harvest_all` (or configurable steps).
-- [x] **Modularize `recon.zsh`** — split into `zsh/recon/*.zsh` files (one per wrapper) and source them all in `recon.zsh`, which becomes only the full pipeline function.
-- [ ] **sinkfinder command** — a wrapper that takes a JS/TXT file and searches for DOM-based vulnerability sinks using a predefined list of sinks (e.g., stored in a new `resources/sinks.txt` file in this repository).
-
 ## Philosophy
 
-- Lightweight automation, not one-click pipelines
-- Output always goes to `$PWD` — you control the directory structure
-- Manual analysis stays central to the workflow
+- Lightweight automation, with manual analysis central to the workflow.
+- Output is rooted in `$PWD`; callers choose their own target directory structure.
+- No general aliases, desktop settings, shell frameworks, or personal environment configuration.

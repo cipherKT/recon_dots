@@ -32,6 +32,7 @@ hx() {
         -rate-limit 200 \
         -timeout 10 \
         -retries 2 \
+        -p 80,8080,8000,8443,9443 \
         -o "$output"
 
     echo "[+] Output: $output"

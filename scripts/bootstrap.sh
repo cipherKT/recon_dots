@@ -1,77 +1,23 @@
 #!/usr/bin/env bash
-set -e
+# Install only the recon wrapper loader; leave shell configuration to the user.
+set -euo pipefail
 
-DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ZSH_CONFIG="$HOME/.config/zsh"
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+RECON_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/recon-dots"
 
-echo "[+] Linking dotfiles from: $DOTFILES_DIR"
-mkdir -p "$ZSH_CONFIG"
-
-for f in aliases exports functions paths recon; do
-    ln -sf "$DOTFILES_DIR/zsh/$f.zsh" "$ZSH_CONFIG/$f.zsh"
-    echo "    linked $f.zsh"
-done
-
-ln -sfn "$DOTFILES_DIR/zsh/recon" "$ZSH_CONFIG/recon"
-echo "    linked recon/ directory"
-
-# Copy zshrc from scripts/
-cp "$DOTFILES_DIR/scripts/zshrc" "$HOME/.zshrc"
-echo "[+] Copied zshrc to ~/.zshrc"
-
-# ─── oh-my-zsh plugins ───────────────────────────────────────────────────────
-ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
-
-if [[ ! -d "$ZSH_CUSTOM/plugins/zsh-autosuggestions" ]]; then
-    echo "[+] Installing zsh-autosuggestions"
-    git clone --depth 1 https://github.com/zsh-users/zsh-autosuggestions \
-        "$ZSH_CUSTOM/plugins/zsh-autosuggestions"
-else
-    echo "[~] zsh-autosuggestions already installed"
+mkdir -p "$RECON_CONFIG"
+loader="$RECON_CONFIG/recon.zsh"
+if [[ -e "$loader" && ! -L "$loader" ]]; then
+    echo "[!] Refusing to replace existing file: $loader" >&2
+    exit 1
 fi
-
-if [[ ! -d "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting" ]]; then
-    echo "[+] Installing zsh-syntax-highlighting"
-    git clone --depth 1 https://github.com/zsh-users/zsh-syntax-highlighting \
-        "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"
-else
-    echo "[~] zsh-syntax-highlighting already installed"
+if [[ -d "$loader" && ! -L "$loader" ]]; then
+    echo "[!] Refusing to replace existing directory: $loader" >&2
+    exit 1
 fi
-
-# Secrets file — create if missing, never overwrite
-if [[ ! -f "$ZSH_CONFIG/secrets.zsh" ]]; then
-    cp "$DOTFILES_DIR/zsh/secrets.example.zsh" "$ZSH_CONFIG/secrets.zsh"
-    echo "[+] Created secrets.zsh from example — fill in your tokens"
-fi
-chmod 600 "$ZSH_CONFIG/secrets.zsh"
-
-# Recon tool installer — keep executable (invoked via the `install-recon` alias)
-chmod +x "$DOTFILES_DIR/scripts/install-recon-tools.sh"
-echo "[+] install-recon alias ready (run it after 'source ~/.zshrc' to install recon tools)"
-
-# ─── Wordlists ────────────────────────────────────────────────────────────────
-WORDLISTS="$HOME/BugBounty/wordlists"
-mkdir -p "$WORDLISTS"
-
-if [[ ! -d "$WORDLISTS/SecLists" ]]; then
-    echo "[+] Cloning SecLists"
-    git clone --depth 1 https://github.com/danielmiessler/SecLists.git \
-        "$WORDLISTS/SecLists"
-else
-    echo "[~] SecLists already present"
-fi
-
-if [[ ! -d "$WORDLISTS/jeanphorn" ]]; then
-    echo "[+] Cloning jeanphorn wordlist"
-    git clone --depth 1 https://github.com/jeanphorn/wordlist.git \
-        "$WORDLISTS/jeanphorn"
-fi
-
-if [[ ! -d "$WORDLISTS/orwa" ]]; then
-    echo "[+] Cloning orwa wordlist"
-    git clone --depth 1 https://github.com/orwagodfather/WordList.git \
-        "$WORDLISTS/orwa"
-fi
-
-echo ""
-echo "[+] Done. Run: source ~/.zshrc"
+ln -sfn "$REPO_DIR/zsh/recon.zsh" "$loader"
+echo "[+] Linked recon wrappers: $loader"
+echo '[+] Add this line to your existing ~/.zshrc, then run it in zsh:'
+printf 'source %q\n' "$loader"
+echo '[+] Install recon dependencies separately:'
+printf 'bash %q\n' "$REPO_DIR/scripts/install-recon-tools.sh"

@@ -1,130 +1,61 @@
 # Agent Setup Guide for recon_dots
 
-## Philosophy & Core Principles
+## Scope
 
-- Lightweight automation, not one-click pipelines
-- Output always goes to `$PWD` — you control the directory structure (no auto-created target trees)
-- Manual analysis stays central to the workflow
-- Amass intentionally removed from subs (too slow, poor yield)
+This repository contains recon wrappers and their setup scripts only. Do not add
+personal aliases, general exports, desktop configuration, shell frameworks, or
+a replacement zshrc. Keep manual analysis central; avoid one-click pipelines.
+Amass is intentionally excluded from subs (slow, poor yield).
 
 ## Setup
 
-- Run `chmod +x scripts/bootstrap.sh && ./scripts/bootstrap.sh` to install dotfiles
-- After bootstrap, run `source ~/.zshrc` to load the new environment
-- Secrets file `~/.config/zsh/secrets.zsh` must be populated with API tokens (GITHUB_TOKEN, SHODAN_SECRET, PDTM_API)
+- Run `bash scripts/bootstrap.sh` to link the loader into
+  `${XDG_CONFIG_HOME:-$HOME/.config}/recon-dots/recon.zsh`.
+- Bootstrap prints a source line; the user adds it to their existing zsh setup.
+- Never overwrite startup files, install shell plugins, or manage personal secrets.
+- Run `bash scripts/install-recon-tools.sh` separately for dependencies;
+  `--check-only` inspects without installation.
+- `GITHUB_TOKEN` is optional and supplied by the caller's environment.
+- Dependencies must be available on PATH. The installer links urldedupe into
+  `~/.local/bin` rather than relying on an alias.
 
-## Recon Workflow (Critical)
+## Recon workflow
 
-- All recon tools output to **current directory** (`$PWD`) — never assume domain-relative paths
-- Standard workflow:
+All output is rooted in `$PWD`, never a hardcoded target tree. For example:
 
-  ```bash
-  mkdir -p ~/BugBounty/targets/example.com/recon
-  cd ~/BugBounty/targets/example.com/recon
-  ```
-
-- Then run tools like `subs example.com`, `hx passive/all_subs.txt`, etc.
-
-## Wrapper Commands & Exact Patterns
-
-### `subs` — Subdomain Enumeration
-
-```bash
-subs target.com
-```
-
-Output: `./passive/<domain>.txt`, raw per-source files under
-`./passive/<domain>/`, and merged `./passive/all_subs.txt`
-Uses `$GITHUB_TOKEN` for `github-subdomains` when it is set
-Dependencies: subfaster, subfinder, assetfinder, jq, github-subdomains, curl
-
-### `hx` — HTTP Probing
-
-```bash
+```zsh
+mkdir -p ~/BugBounty/targets/example.com/recon
+cd ~/BugBounty/targets/example.com/recon
+subs example.com
 hx passive/all_subs.txt
+kat live/httpx_simple.txt
+url_harvest live/httpx_simple.txt
+js_harvest_all
 ```
 
-Output: `./live/httpx.txt` (full) and `./live/httpx_simple.txt` (URLs only)
-Dependencies: httpx, anew
+- `subs`: `passive/<domain>.txt`, raw sources in `passive/<domain>/`,
+  merged `passive/all_subs.txt`.
+- `hx`: `live/httpx.txt` and `live/httpx_simple.txt`.
+- `kat`: `katana.txt`.
+- `url_harvest` / `url_harvest_katana`: single host writes flat in `$PWD`;
+  file input writes under `urls/<hostname>/` plus merged `all_urls.txt`.
+- `js_harvest`: `js_files.txt`; `js_harvest_all`: per-host results plus
+  `js_files_all.txt`.
+- `curlall`: see wrapper usage for batch URL fetching.
 
-### `kat` — Katana Crawl
+## Extensions and checks
 
-```bash
-kat live/httpx_simple.txt     # file input
-kat https://sub.target.com    # single URL
-```
+Add wrappers in `zsh/recon/<name>.zsh`; the loader discovers them automatically.
+Use local variables, dependency checks, clear output, and `$PWD`-relative results.
+Update the dependency installer and README when adding required tools.
+Keep required configuration explicit rather than importing personal shell modules.
+Validate Bash scripts with `bash -n`, zsh files with `zsh -n`, and smoke-test
+bootstrap and loader changes using a temporary HOME without installing live tools.
 
-Output: `./katana.txt`
-Dependencies: katana
+## Linux compatibility
 
-### `url_harvest` — Full URL Collection
-
-```bash
-url_harvest live/httpx_simple.txt   # file with one host per line
-url_harvest https://sub.target.com  # single host
-```
-
-Output per host: `./<hostname>/{katana,gau,waymore,waybackurls,all_urls}.txt`
-Dependencies: katana, gau, waymore, waybackurls, anew
-
-### `ffm` — FFUF Directory Bruteforce
-
-```bash
-ffm https://target.com
-```
-
-Uses `$WL_DIRB`, filters all status codes except 404
-Dependencies: ffuf
-
-## Tool Dependencies
-
-- Install via pdtm (ProjectDiscovery Tool Manager) or manually:
-  subfinder, assetfinder, httpx, katana, gau, waymore, waybackurls, ffuf, anew, jq, github-subdomains
-- Wordlists auto-cloned to `~/BugBounty/wordlists/` during bootstrap
-
-## Environment & Configuration
-
-### Key Files
-
-- zsh modules: `aliases.zsh`, `exports.zsh`, `functions.zsh`, `paths.zsh`, `recon.zsh`
-- Main zshrc: `scripts/zshrc` (copied to `~/.zshrc`)
-- Secrets template: `zsh/secrets.example.zsh` → `~/.config/zsh/secrets.zsh`
-
-### Wordlist Environment Variables (from exports.zsh)
-
-```bash
-$WL_COMMON    # common.txt
-$WL_DIRB      # directory-list-2.3-medium.txt
-$WL_RAFT      # raft-medium-directories.txt
-$WL_PARAMS    # burp-parameter-names.txt
-```
-
-### Secrets File Format (~/.config/zsh/secrets.zsh)
-
-```bash
-export GITHUB_TOKEN=""
-export SHODAN_SECRET=""
-export PDTM_API=""
-```
-
-- File must be chmod 600
-- Never tracked in git
-- Bootstrap creates from example only if missing
-
-## Bootstrap Behavior
-
-- Symlinks `zsh/*.zsh` → `~/.config/zsh/`
-- Copies `scripts/zshrc` → `~/.zshrc` (always overwrites)
-- Installs zsh-autosuggestions and zsh-syntax-highlighting oh-my-zsh plugins if missing
-- Creates `~/.config/zsh/secrets.zsh` from example only if it doesn't exist
-- Clones SecLists, jeanphorn, orwa into `~/BugBounty/wordlists/` with `--depth 1`
-
-## Extension Guidelines
-
-**Adding a new recon wrapper**: Add to `zsh/recon.zsh` following existing pattern — local vars, dependency check, `$PWD`-relative output, clear echo output.
-
-**Adding a new wordlist var**: Add to `exports.zsh` under wordlists section.
-
-**Adding a new tool to bootstrap**: Add `--depth 1` git clone under wordlists section or dependency install under plugins section.
-
-**Updating PATH**: Edit `paths.zsh` only — never modify `.zshrc` or other files directly.
+Keep Arch and Kali/Debian package mappings working. Wrappers require zsh;
+install it for minimal images. Use pipx for Python applications, never
+`--break-system-packages`. Package installation must work as a normal user
+with sudo or as root without sudo. Check apt behavior with mocked commands
+when a real Kali environment is unavailable, and state that validation limit.

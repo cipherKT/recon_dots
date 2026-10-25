@@ -1,13 +1,11 @@
-# Source all modular recon wrappers
-local recon_dir="${0:A:h}/recon"
-if [[ ! -d "$recon_dir" && -n "$ZSH_CONFIG_DIR" ]]; then
-    recon_dir="$ZSH_CONFIG_DIR/recon"
-fi
-
-if [[ -d "$recon_dir" ]]; then
-    for file in "$recon_dir"/*.zsh; do
-        source "$file"
+# Source through the real path so the bootstrap symlink works from any directory.
+# Keep loader variables local and prevent user aliases from rewriting wrappers.
+() {
+    setopt localoptions noaliases
+    local recon_dir="${(%):-%x}"
+    recon_dir="${recon_dir:A:h}/recon"
+    local wrapper
+    for wrapper in "$recon_dir"/*.zsh(N); do
+        source "$wrapper" || return
     done
-else
-    echo "[!] Could not find recon wrappers directory: $recon_dir"
-fi
+}
