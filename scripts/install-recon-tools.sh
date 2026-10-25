@@ -311,14 +311,37 @@ install_urldedupe() {
   fi
 }
 
+# Persist the Go tool path for future zsh sessions without replacing user config.
+configure_go_path() {
+  local zshrc="${ZDOTDIR:-$HOME}/.zshrc"
+  local path_line='case ":$PATH:" in *":$HOME/go/bin:"*) ;; *) export PATH="$HOME/go/bin:$PATH" ;; esac'
+  if [[ -f "$zshrc" ]] && grep -Fqx "$path_line" "$zshrc"; then
+    echo "[~] Go PATH setup already present in $zshrc"
+  elif ((CHECK_ONLY)); then
+    echo "[..] Would add ~/go/bin to PATH in $zshrc"
+    return 0
+  else
+    if ! mkdir -p "$(dirname "$zshrc")" ||
+       ! printf '\n# recon-dots: Go-installed recon tools\n%s\n' "$path_line" >> "$zshrc"; then
+      mark_failed "Go PATH" "could not update $zshrc"
+      return 1
+    fi
+    echo "[+] Added Go PATH setup to $zshrc"
+  fi
+  if ((!CHECK_ONLY)); then
+    echo '[+] Open a new zsh terminal or run:'
+    printf '    source %q\n' "$zshrc"
+  fi
+}
+
 # Tokens are supplied by the caller's environment, not shell files managed here.
 check_manual_steps() {
   echo ""
   if [[ -z "${GITHUB_TOKEN:-}" ]]; then
     echo "[~] Optional: export GITHUB_TOKEN to enable github-subdomains in subs."
   fi
-  echo '[+] Ensure these tool directories are on your shell PATH:'
-  printf '    %s\n' "$HOME/go/bin" "$HOME/.pdtm/go/bin" "$HOME/.local/bin"
+  echo '[+] Ensure these additional tool directories are on your shell PATH:'
+  printf '    %s\n' "$HOME/.pdtm/go/bin" "$HOME/.local/bin"
 }
 
 # ─── main ────────────────────────────────────────────────────────────────────
@@ -332,6 +355,7 @@ echo ""
 install_waymore
 echo ""
 install_urldedupe
+configure_go_path
 
 echo ""
 echo "=== summary: ${#OK[@]} installed, ${#SKIPPED[@]} already present, ${#FAILED[@]} failed ==="

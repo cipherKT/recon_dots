@@ -13,6 +13,8 @@ Amass is intentionally excluded from subs (slow, poor yield).
   `${XDG_CONFIG_HOME:-$HOME/.config}/recon-dots/recon.zsh`.
 - Bootstrap prints a source line; the user adds it to their existing zsh setup.
 - Never overwrite startup files, install shell plugins, or manage personal secrets.
+- The dependency installer may append its guarded Go PATH entry to
+  `${ZDOTDIR:-$HOME}/.zshrc`; preserve existing content and keep reruns idempotent.
 - Run `bash scripts/install-recon-tools.sh` separately for dependencies;
   `--check-only` inspects without installation.
 - `GITHUB_TOKEN` is optional and supplied by the caller's environment.

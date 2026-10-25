@@ -23,8 +23,11 @@ bash scripts/install-recon-tools.sh --check-only
 bash scripts/install-recon-tools.sh
 ```
 
-The installer supports `--upgrade` and `-y`. Ensure `~/go/bin`,
-`~/.pdtm/go/bin`, and `~/.local/bin` are on your existing shell PATH
+The installer supports `--upgrade` and `-y`. It appends a guarded `~/go/bin`
+PATH entry to `${ZDOTDIR:-$HOME}/.zshrc`, preserving existing content and
+avoiding duplicate entries on reruns. Open a new zsh terminal or source that
+file after installation. `--check-only` never edits it.
+Ensure `~/.pdtm/go/bin` and `~/.local/bin` are on your existing shell PATH
 (or the appropriate Go bin directory if you customize Go's installation).
 The installer uses an existing `urldedupe` executable anywhere on PATH; no alias
 is required. If missing, it builds under

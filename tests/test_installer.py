@@ -85,6 +85,26 @@ for mode in normal check upgrade; do
 [[ "$URLDEDUPE_DIR" == "${XDG_DATA_HOME:-$HOME/.local/share}/recon-dots/tools/urldedupe" ]]
 ''')
 
+    def test_go_path_preserves_config_and_is_idempotent(self):
+        self.run_shell('''
+export ZDOTDIR="$HOME/zsh config"
+mkdir -p "$ZDOTDIR"
+printf '# existing settings' > "$ZDOTDIR/.zshrc"
+configure_go_path
+configure_go_path
+[[ $(grep -c 'recon-dots: Go-installed' "$ZDOTDIR/.zshrc") == 1 ]] || exit 1
+grep -q '^# existing settings$' "$ZDOTDIR/.zshrc" || exit 1
+zsh -f -c 'source "$ZDOTDIR/.zshrc"; source "$ZDOTDIR/.zshrc"; [[ ":$PATH:" == *":$HOME/go/bin:"* ]]'
+''')
+
+    def test_go_path_check_only_does_not_write(self):
+        self.run_shell('''
+export ZDOTDIR="$HOME/untouched"
+CHECK_ONLY=1
+configure_go_path
+[[ ! -e "$ZDOTDIR" ]]
+''')
+
     def test_privilege_dispatch(self):
         self.run_shell('''
 sudo() { printf 'sudo '; "$@"; }
