@@ -63,6 +63,28 @@ install_waymore
 [[ ${#FAILED[@]} == 1 && ${FAILED[0]} == waymore ]]
 ''')
 
+    def test_existing_urldedupe_on_path(self):
+        output = self.run_shell('''
+mkdir -p "$HOME/custom bin"
+printf '#!/bin/sh\\nexit 0\\n' > "$HOME/custom bin/urldedupe"
+chmod +x "$HOME/custom bin/urldedupe"
+export PATH="$HOME/custom bin:$PATH"
+for mode in normal check upgrade; do
+  CHECK_ONLY=0; UPGRADE=0
+  [[ "$mode" != check ]] || CHECK_ONLY=1
+  [[ "$mode" != upgrade ]] || UPGRADE=1
+  install_urldedupe || exit
+ done
+[[ ! -e "$URLDEDUPE_DIR" && ${#SKIPPED[@]} == 3 ]]
+''')
+        self.assertNotIn('missing (would:', output)
+        self.assertIn('custom bin/urldedupe', output)
+
+    def test_urldedupe_default_directory(self):
+        self.run_shell('''
+[[ "$URLDEDUPE_DIR" == "${XDG_DATA_HOME:-$HOME/.local/share}/recon-dots/tools/urldedupe" ]]
+''')
+
     def test_privilege_dispatch(self):
         self.run_shell('''
 sudo() { printf 'sudo '; "$@"; }

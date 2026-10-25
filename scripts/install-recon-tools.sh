@@ -253,7 +253,9 @@ install_waymore() {
 }
 
 # ─── 4. urldedupe (C++, installed as a command) ────────────────────────────
-URLDEDUPE_DIR="${URLDEDUPE_DIR:-$HOME/security/BugBounty/tools/urldedupe}"
+URLDEDUPE_DIR="${URLDEDUPE_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/recon-dots/tools/urldedupe}"
+# Absolute paths keep the executable link valid when an override is relative.
+[[ "$URLDEDUPE_DIR" == /* ]] || URLDEDUPE_DIR="$PWD/$URLDEDUPE_DIR"
 
 link_urldedupe() {
   mkdir -p "$HOME/.local/bin" &&
@@ -262,6 +264,17 @@ link_urldedupe() {
 
 install_urldedupe() {
   echo "[+] urldedupe (C++)"
+  local installed
+  installed="$(type -P urldedupe || true)"
+  if [[ -n "$installed" ]]; then
+    if ((!UPGRADE || CHECK_ONLY)) || [[ ! "$installed" -ef "$URLDEDUPE_DIR/urldedupe" ]]; then
+      mark_skipped "urldedupe" "available at $installed"
+      if ((UPGRADE && !CHECK_ONLY)); then
+        echo "    [~] Upgrade this existing installation using its original install method."
+      fi
+      return 0
+    fi
+  fi
   if [[ -x "$URLDEDUPE_DIR/urldedupe" ]] && ((!UPGRADE)) && ((!CHECK_ONLY)); then
     link_urldedupe || { mark_failed "urldedupe" "could not link executable"; return 1; }
     mark_skipped "urldedupe" "already built at $URLDEDUPE_DIR/urldedupe"

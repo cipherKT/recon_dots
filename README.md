@@ -26,9 +26,19 @@ bash scripts/install-recon-tools.sh
 The installer supports `--upgrade` and `-y`. Ensure `~/go/bin`,
 `~/.pdtm/go/bin`, and `~/.local/bin` are on your existing shell PATH
 (or the appropriate Go bin directory if you customize Go's installation).
-It installs `urldedupe` as a command in `~/.local/bin`; no alias is required.
-Its source/build directory defaults to `~/security/BugBounty/tools/urldedupe`
-and can be overridden with `URLDEDUPE_DIR`.
+The installer uses an existing `urldedupe` executable anywhere on PATH; no alias
+is required. If missing, it builds under
+`${XDG_DATA_HOME:-$HOME/.local/share}/recon-dots/tools/urldedupe` and links the
+command into `~/.local/bin`. Override the build directory when needed:
+
+```bash
+URLDEDUPE_DIR="$HOME/tools/urldedupe" bash scripts/install-recon-tools.sh
+```
+
+For an existing manual installation, add its executable directory to your PATH.
+An alias defined in your interactive shell is not visible to the Bash installer.
+`--upgrade` rebuilds only the selected build directory; installations found
+elsewhere on PATH are left to their original installation method.
 
 Provide `GITHUB_TOKEN` through your own environment or secrets setup to enable
 the GitHub source in `subs`. No tokens are stored or sourced by this repository.
