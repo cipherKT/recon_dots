@@ -24,6 +24,7 @@ hx() {
     httpx \
         -l "$input" \
         -silent \
+        -json \
         -follow-redirects \
         -sc -cl -ct -location -wc \
         -title -server -tech-detect \

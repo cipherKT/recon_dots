@@ -30,6 +30,9 @@ url_harvest() {
     fi
 
     local tools=(gau waymore waybackurls anew)
+    # Only file input uses urldedupe for the combined results.
+    [[ -f "$input" ]] && tools+=(urldedupe)
+    local tool
     for tool in "${tools[@]}"; do
         if ! command -v "$tool" &>/dev/null; then
             echo "[!] Missing dependency: $tool"

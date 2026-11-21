@@ -74,12 +74,12 @@ subs() {
 
         if command -v github-subdomains &>/dev/null; then
             source_file="$source_dir/github.txt"
-            if [[ -n "$GITHUB_TOKEN" ]]; then
+            if [[ -n "$GITHUB_TOKEN_SUBDOMAINS" ]]; then
                 echo "[+] Running github-subdomains on $d"
-                github-subdomains -d "$d" -t "$GITHUB_TOKEN" -o "$source_file"
+                github-subdomains -d "$d" -t "$GITHUB_TOKEN_SUBDOMAINS" -o "$source_file"
                 ran_any=1
             else
-                echo "[!] GITHUB_TOKEN is not set (skipping github-subdomains)"
+                echo "[!] GITHUB_TOKEN_SUBDOMAINS is not set (skipping github-subdomains)"
             fi
         else
             echo "[!] Missing dependency: github-subdomains (skipping)"
